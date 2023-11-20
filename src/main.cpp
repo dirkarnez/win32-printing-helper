@@ -1,50 +1,29 @@
+#define UNICODE
+#define _UNICODE
 #include <iostream>
 #include <memory>
 #include <windows.h>
 
-struct tLibraryDeleter
-{
-  typedef HMODULE pointer;
-  void operator()(HMODULE h)
-  {
-    FreeLibrary(h);
-    std::cout << "Released" << std::endl;
-  }
-};
+
 
 int main()
 {
-  {
-    auto user32 = std::unique_ptr<HMODULE, tLibraryDeleter>(::LoadLibraryA("user32.dll"));
+  wchar_t pname[256];
+  DWORD dwSize = 256;
 
-    typedef int(__stdcall * MessageBoxA_t)(HWND, LPCSTR, LPCSTR, UINT);
-    MessageBoxA_t MessageBoxA = reinterpret_cast<MessageBoxA_t>(::GetProcAddress(user32.get(), "MessageBoxA"));
+  DWORD dwNeeded, dwReturned;
+  PRINTER_INFO_5W* pinfo;
 
-    if (MessageBoxA != NULL)
-    {
-      //(*MessageBoxA)
-      MessageBoxA(NULL, "I'm a MessageBox", "Hello", MB_OK);
-    }
-  }
+  GetDefaultPrinterW(pname, &dwSize);
 
-  {
-    auto shcore = std::unique_ptr<HMODULE, tLibraryDeleter>(::LoadLibraryA("shcore.dll"));
+  std::wstring default_printer(pname, dwSize);
+  std::wcout << "Default printer is" << default_printer << std::endl;
 
-    enum ProcessDpiAwareness
-    {
-      ProcessDpiUnaware = 0,
-      ProcessSystemDpiAware = 1,
-      ProcessPerMonitorDpiAware = 2
-    };
-    typedef HRESULT(__stdcall * SetProcessDpiAwareness_t)(ProcessDpiAwareness);
+  // EnumPrintersW(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, NULL, 5, NULL, 0, &dwNeeded, &dwReturned);
 
-    SetProcessDpiAwareness_t SetProcessDpiAwareness = reinterpret_cast<SetProcessDpiAwareness_t>(::GetProcAddress(shcore.get(), "SetProcessDpiAwareness"));
+  pinfo = (PRINTER_INFO_5W*)malloc(dwNeeded);
 
-    if (SetProcessDpiAwareness != NULL)
-    {
-      std::cout << ((SetProcessDpiAwareness(ProcessPerMonitorDpiAware) == S_OK) ? "OK" : "NOT OK") << std::endl;
-    }
-  }
+  EnumPrintersW(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, NULL, 5, (PBYTE)pinfo, dwNeeded, &dwNeeded, &dwReturned);
 
   return 0;
 }

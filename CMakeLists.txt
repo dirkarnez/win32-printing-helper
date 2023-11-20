@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project("windows-libraries-wrapper")
+project("win32-printing-helper")
 
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 
